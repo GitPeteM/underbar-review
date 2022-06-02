@@ -201,6 +201,19 @@
   //          No accumulator is given so the first element is used.
   _.reduce = function(collection, iterator, accumulator) {
 
+    if (accumulator === undefined) {
+      accumulator = collection[0];
+      collection = collection.slice(1);
+      _.each(collection, function (item) {
+        accumulator = iterator(accumulator, item);
+      });
+    } else {
+      _.each(collection, function (item) {
+        accumulator = iterator(accumulator, item);
+      });
+    }
+
+    return accumulator;
   };
 
   // Determine if the array or object contains a given value (using `===`).
@@ -217,14 +230,56 @@
 
 
   // Determine whether all of the elements match a truth test.
+
+  //strategy
+    //return reduce with an accumulator as true
+    //if an element is called with the iterator and it's false, if the memo is false then return false
   _.every = function(collection, iterator) {
     // TIP: Try re-using reduce() here.
+    if (iterator === undefined) {
+      iterator = _.identity;
+    }
+
+    return _.reduce(collection, function(wasFound, item) {
+      if (wasFound === false) {
+        return false;
+      }
+      // return item === target;
+      // if (!!iterator(item)) {
+      //   return true;
+      // }
+      return !!iterator(item);
+    }, true);
   };
 
   // Determine whether any of the elements pass a truth test. If no iterator is
   // provided, provide a default one
   _.some = function(collection, iterator) {
     // TIP: There's a very clever way to re-use every() here.
+    if (collection.length === 0) {
+      return false;
+    }
+
+    if (iterator === undefined) {
+      iterator = _.identity;
+    }
+
+    var result = false;
+    // every returning true until found false value.
+    _.each(collection, function(val) {
+      console.log(val, 'before:' + result);
+      if (iterator(val)) {
+        result = true;
+      }
+      // return iterator(val);
+      // if (iterator(val)) {
+      //   return true;
+      // }
+
+      console.log(val, 'after: ', result);
+    });
+
+    return result;
   };
 
 
@@ -247,11 +302,36 @@
   //     bla: "even more stuff"
   //   }); // obj1 now contains key1, key2, key3 and bla
   _.extend = function(obj) {
+
+    // iterate over all arguments
+    _.each(arguments, function(eachObj) {
+      // console.log(arguments);
+      // console.log(eachObj);
+        // iterate over all properties within each argument(object)
+        for (var key in eachObj) {
+          //update object with current property
+          obj[key] = eachObj[key];
+        }
+    });
+    return obj;
   };
 
   // Like extend, but doesn't ever overwrite a key that already
   // exists in obj
   _.defaults = function(obj) {
+    // iterate over all arguments
+    _.each(arguments, function(eachObj) {
+      // console.log(arguments);
+      // console.log(eachObj);
+        // iterate over all properties within each argument(object)
+        for (var key in eachObj) {
+          if (obj[key] === undefined) {
+            //update object with current property
+            obj[key] = eachObj[key];
+          }
+        }
+    });
+    return obj;
   };
 
 
@@ -294,7 +374,68 @@
   // _.memoize should return a function that, when called, will check if it has
   // already computed the result for the given argument and return that value
   // instead if possible.
+
+  // I- function with arguments (primitive values)
+  // O - cache of previosly run function with value output and arguments.
+  // C - none
+  // E - none
+
+  // strategy
+  // recognize or capture what arguments have already been passed and their value within a cache,
+  // then when future functions run to check the passed cache if it already has been run.
+  // if so then return results from the cache rather than running the function
+
+  // -------------------__________-----------------
+
+  // var add, memoAdd;
+
+  // beforeEach(function() {
+  //   add = function(a, b) {
+  //     return a + b;
+  //   };
+
+  //   memoAdd = _.memoize(add);
+  // });
+
+  // it('should give different results for different arguments', function() {
+  //   expect(memoAdd(1, 2)).to.equal(3);
+  //   expect(memoAdd(3, 4)).to.equal(7);
+  //   expect(memoAdd(1, 3)).to.equal(4);
+  // });
+
+  // -------------------__________-----------------
+
+  // psuedocode
+  // create var pastValue set to empty obj.
+  //  return a closure function
+    // if pastValue obj key matches func & arguments
+      // we return the value of the obj key within pastValue
+    //otherwise
+      // then we will run the func code
+      // save the func and output in pastValue
+
+
+  // check if stringified version of func matches pastValue stringified version
+  // otherwise
+  // run func
+  // add stringified func to pastValue.
+
   _.memoize = function(func) {
+    var pastValue = {};
+    return function() {
+      var arg = JSON.stringify(arguments);
+      // for (var key in pastValue) {
+        if (pastValue[arg] === undefined) {
+          pastValue[arg] = func.apply(this, arguments);
+          // return pastValue[JSON.stringify(func)];
+        }
+        return pastValue[arg];
+        // else {
+        //    pastValue[JSON.stringify(func)] = func.apply(this, arguments);
+        //   // return func;
+        // }
+      // }
+    }
   };
 
   // Delays a function for the given number of milliseconds, and then calls
